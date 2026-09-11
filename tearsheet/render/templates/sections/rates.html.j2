@@ -1,0 +1,84 @@
+{% from '_macros.html.j2' import change, stale_badge %}
+{% set ctx = result.context %}
+
+<div class="grid grid--sidebar">
+  <div class="block">
+    <h3 class="block__title">Treasury curve</h3>
+    <div class="chart">{{ ctx.charts.curve | safe }}</div>
+    <p class="block__note">Observed {{ ctx.curve_observed | day }}. FRED constant-maturity yields lag by one to two days.</p>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Curve move</h3>
+    {% for item in ctx.classifications %}
+      <div class="callout" style="margin-bottom:10px">
+        <div class="stat__label">{{ item.window }}</div>
+        <div class="stat__value">{{ item.move.label }}</div>
+        <div class="dim">
+          2Y {{ change(item.move.short_bp, 'bp', 1) }} ·
+          10Y {{ change(item.move.long_bp, 'bp', 1) }} ·
+          spread {{ change(item.move.spread_bp, 'bp', 1) }}
+        </div>
+      </div>
+    {% endfor %}
+    {% for item in ctx.spread_states %}
+      <div class="dim" style="margin-top:6px">
+        {{ item.name }}: <strong>{{ item.state.spread_bp | signed(0) }}bp</strong>
+        {% if item.state.is_inverted %}<span class="badge badge--partial">inverted</span>{% endif %}
+        {% if item.state.transition %}<span class="badge badge--stale">{{ item.state.transition }}</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="block">
+  <h3 class="block__title">Key yields</h3>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Tenor</th><th scope="col">Yield</th>
+          {% for column in ctx.return_columns %}<th scope="col">{{ column }}</th>{% endfor %}
+          <th scope="col">Observed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in ctx.yield_rows %}
+        <tr>
+          <td>{{ row.label }}</td>
+          <td>{{ row.level | level }}%</td>
+          {% for column in ctx.return_columns %}<td>{{ change(row.changes.get(column), 'bp', 0) }}</td>{% endfor %}
+          <td class="dim">{{ row.observation_date | day('%d %b') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid grid--2">
+  <div class="block">
+    <h3 class="block__title">Curve spreads (3 years)</h3>
+    <div class="chart">{{ ctx.charts.spreads | safe }}</div>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Real rates, breakevens and policy</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Series</th><th scope="col">Level</th><th scope="col">1D</th><th scope="col">1W</th><th scope="col">Observed</th></tr>
+        </thead>
+        <tbody>
+          {% for row in ctx.other_rows %}
+          <tr>
+            <td>{{ row.name }}{{ stale_badge(row.stale) }}</td>
+            <td>{{ row.level | level }}%</td>
+            <td>{{ change(row.change_1d, 'bp', 0) }}</td>
+            <td>{{ change(row.change_1w, 'bp', 0) }}</td>
+            <td class="dim">{{ row.observation_date | day('%d %b') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

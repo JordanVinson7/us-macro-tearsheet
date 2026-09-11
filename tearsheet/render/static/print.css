@@ -1,0 +1,80 @@
+/* =============================================================================
+   Print styles — used for the PDF rendered by headless Chromium.
+
+   A4, the navigation removed, and sections kept off page boundaries. The
+   running header and footer (report date, page numbers) are supplied by the
+   PDF renderer itself: Chromium does not implement CSS @page margin boxes, so
+   Playwright's headerTemplate/footerTemplate is the only way to get them.
+   ============================================================================= */
+
+@page {
+  size: A4;
+  /* Margins are set by the PDF renderer rather than here, because the running
+     header and footer need reserved space and Playwright's margin option is
+     what Chromium honours alongside displayHeaderFooter. */
+}
+
+@media print {
+  :root { --measure: 100%; }
+
+  body {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    background: #fff;
+  }
+
+  .wrap { max-width: none; padding: 0; }
+
+  /* Interactive furniture has no meaning on paper. */
+  .nav,
+  .no-print,
+  .plotly .modebar { display: none !important; }
+
+  .masthead { padding-top: 0; }
+  .masthead__title { font-size: 19pt; }
+
+  a { color: var(--ink); text-decoration: none; }
+  /* Headline links are the only ones whose target is not otherwise visible. */
+  .headlines a::after {
+    content: " (" attr(href) ")";
+    font-size: 7pt;
+    color: var(--faint);
+    word-break: break-all;
+  }
+
+  .section {
+    break-inside: auto;
+    padding: 14pt 0 4pt;
+  }
+  .section__head { break-after: avoid; }
+  .block__title { break-after: avoid; }
+  .chart, .flags, .callout, .kpis { break-inside: avoid; }
+  table { break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+
+  /* The larger sections each start a fresh page so tables are not split
+     across a fold in the middle of a row group. */
+  #section-equities,
+  #section-rates,
+  #section-macro,
+  #section-cross_asset,
+  .footer { break-before: page; }
+
+  th { position: static; }
+  tbody tr:hover { background: none; }
+
+  /* On screen a wide table scrolls sideways; on paper it would simply be
+     clipped, silently losing the right-hand columns. Tightening the type and
+     padding lets the full 13-column performance tables fit an A4 width. */
+  .table-scroll { overflow: visible; }
+  table { font-size: 7pt; }
+  th, td { padding: 2pt 3pt; }
+  th { font-size: 6.2pt; letter-spacing: 0.02em; }
+
+  .kpis { grid-template-columns: repeat(9, 1fr); }
+  .kpi__value { font-size: 12pt; }
+  .grid--2, .grid--3, .grid--sidebar { grid-template-columns: 1fr 1fr; }
+
+  .footer { padding-bottom: 0; }
+}

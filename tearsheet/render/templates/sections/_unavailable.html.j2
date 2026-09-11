@@ -1,0 +1,10 @@
+{# Placeholder for a section that could not be built. Showing the gap
+   explicitly is better than silently omitting the section: the reader can see
+   that something is meant to be there, and why it is not. #}
+<div class="callout callout--warn">
+  <strong>Data unavailable.</strong>
+  {% if result.error %}{{ result.error }}{% endif %}
+  {% if result.notes %}
+    <ul>{% for note in result.notes %}<li>{{ note }}</li>{% endfor %}</ul>
+  {% endif %}
+</div>

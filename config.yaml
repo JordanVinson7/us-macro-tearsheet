@@ -1,0 +1,482 @@
+# =============================================================================
+# US Macro & Markets Morning Tear-Sheet — non-secret configuration.
+# Secrets live in .env (gitignored). Nothing in this file is confidential.
+#
+# Edit this file to change the universe, thresholds or layout without touching
+# any Python.
+# =============================================================================
+
+meta:
+  title: "US Macro & Markets Morning Tear-Sheet"
+  subtitle: "Pre-open briefing"
+  timezone: "America/New_York"      # every timestamp is displayed in ET
+  author: "Jordan Vinson"
+
+# --- Scheduling -------------------------------------------------------------
+# The GitHub Actions cron fires twice (12:00 and 13:00 UTC) to cover DST; the
+# guard below decides whether a given firing should actually produce a report.
+schedule:
+  target_time: "08:00"          # nominal publish time, ET
+  window_start: "07:00"         # guard: run only if ET now is inside
+  window_end:   "11:00"         # this window (tolerates late Actions starts)
+  weekdays_only: true
+  skip_market_holidays: true
+  exchange_calendar: "XNYS"     # NYSE, via exchange_calendars
+
+# --- Output & archive -------------------------------------------------------
+output:
+  docs_dir: "docs"              # committed by CI; served by GitHub Pages
+  local_dir: "output"           # gitignored; where local runs write
+  archive_dir: "archive"
+  retain_days: 120              # prune archived HTML older than this; 0 = keep all
+  pdf_filename: "tearsheet-{date}.pdf"
+
+# --- Section toggles --------------------------------------------------------
+# Any section can be switched off without affecting the others.
+sections:
+  header: true
+  calendar: true
+  overnight: true
+  equities: true
+  rates: true
+  credit: true
+  macro: true
+  fx_commodities: true
+  cross_asset: true
+  headlines: true
+
+# --- Data sources -----------------------------------------------------------
+sources:
+  fred:
+    base_url: "https://api.stlouisfed.org/fred"
+    timeout_seconds: 20
+    max_retries: 4
+    validate_series_on_startup: true   # drop invalid IDs with a warning, never crash
+
+  polygon:
+    # Polygon rebranded to "Massive" in late 2025; API and keys are unchanged.
+    # Base URL is configurable in case the host is retired.
+    base_url: "https://api.polygon.io"
+    timeout_seconds: 20
+    max_retries: 4
+    rate_limit:
+      max_calls: 5              # free tier: 5 requests per rolling 60s
+      per_seconds: 60
+    call_budget: 8              # soft cap per run; exceeding it logs a warning
+    news_enabled: true          # falls back to yfinance news if unavailable
+
+  yfinance:
+    batch_size: 40              # tickers per yf.download call
+    max_retries: 4
+    # Must comfortably exceed the longest analytics lookback in TRADING days
+    # (regime.lookback = 504), so ~1,000 calendar days ≈ 690 sessions.
+    history_days: 1000
+    # Yahoo rate-limits cloud IPs; on failure fall back in this order.
+    fallback_chain: ["polygon_grouped_daily", "fred_levels"]
+
+  news:
+    max_headlines: 10
+    min_headlines: 6
+    yfinance_tickers: ["SPY", "QQQ", "IWM"]
+    rss_feeds:
+      - name: "Federal Reserve press releases"
+        url: "https://www.federalreserve.gov/feeds/press_all.xml"
+
+# =============================================================================
+# UNIVERSE
+# =============================================================================
+universe:
+  indices:
+    - { ticker: "^GSPC", name: "S&P 500",            short: "SPX" }
+    - { ticker: "^NDX",  name: "Nasdaq 100",         short: "NDX" }
+    - { ticker: "^DJI",  name: "Dow Jones Ind.",     short: "DJIA" }
+    - { ticker: "^RUT",  name: "Russell 2000",       short: "RUT" }
+    - { ticker: "RSP",   name: "S&P 500 Equal Wt.",  short: "RSP" }
+
+  sectors:
+    - { ticker: "XLK",  name: "Technology" }
+    - { ticker: "XLF",  name: "Financials" }
+    - { ticker: "XLE",  name: "Energy" }
+    - { ticker: "XLV",  name: "Health Care" }
+    - { ticker: "XLY",  name: "Cons. Discretionary" }
+    - { ticker: "XLP",  name: "Cons. Staples" }
+    - { ticker: "XLI",  name: "Industrials" }
+    - { ticker: "XLB",  name: "Materials" }
+    - { ticker: "XLU",  name: "Utilities" }
+    - { ticker: "XLRE", name: "Real Estate" }
+    - { ticker: "XLC",  name: "Comm. Services" }
+
+  futures:
+    - { ticker: "ES=F",  name: "S&P 500 E-mini",   cash: "^GSPC" }
+    - { ticker: "NQ=F",  name: "Nasdaq 100 E-mini", cash: "^NDX" }
+    - { ticker: "YM=F",  name: "Dow E-mini",        cash: "^DJI" }
+    - { ticker: "RTY=F", name: "Russell 2000 E-mini", cash: "^RUT" }
+    - { ticker: "ZN=F",  name: "10Y T-Note",        cash: null }
+
+  volatility:
+    - { ticker: "^VIX",   name: "VIX (30d)",  short: "VIX" }
+    # ^VIX3M is inconsistently served by Yahoo. If missing, the term-structure
+    # chart renders "unavailable" and the regime composite re-weights.
+    - { ticker: "^VIX3M", name: "VIX3M (3m)", short: "VIX3M", optional: true }
+
+  credit_etfs:
+    - { ticker: "HYG", name: "iShares HY Corp" }
+    - { ticker: "LQD", name: "iShares IG Corp" }
+
+  fx:
+    - { ticker: "DX-Y.NYB", name: "US Dollar Index", short: "DXY", invert: false }
+    - { ticker: "EURUSD=X", name: "EUR/USD",  short: "EURUSD" }
+    - { ticker: "JPY=X",    name: "USD/JPY",  short: "USDJPY" }
+    - { ticker: "GBPUSD=X", name: "GBP/USD",  short: "GBPUSD" }
+    # Yahoo serves no daily history for the offshore yuan (CNH=X) — only a
+    # single live quote — so the onshore fix (CNY=X) is used and labelled as
+    # such. The two track each other closely but are not identical.
+    - { ticker: "CNY=X",    name: "USD/CNY",  short: "USDCNY" }
+
+  commodities:
+    - { ticker: "GC=F", name: "Gold",         short: "XAU" }
+    - { ticker: "SI=F", name: "Silver",       short: "XAG" }
+    - { ticker: "HG=F", name: "Copper",       short: "HG" }
+    - { ticker: "CL=F", name: "WTI Crude",    short: "WTI" }
+    - { ticker: "BZ=F", name: "Brent Crude",  short: "Brent" }
+    - { ticker: "NG=F", name: "Nat Gas",      short: "NG" }
+
+  crypto:
+    - { ticker: "BTC-USD", name: "Bitcoin",  short: "BTC" }
+    - { ticker: "ETH-USD", name: "Ethereum", short: "ETH" }
+
+  # Previous-session minute bars via Polygon (1 API call each).
+  intraday:
+    tickers: ["SPY", "QQQ", "IWM", "TLT"]
+    bar_size: "minute"
+
+  # Ratio charts: numerator / denominator.
+  ratios:
+    - { numerator: "RSP", denominator: "SPY", name: "Equal weight vs cap weight" }
+    - { numerator: "IWM", denominator: "SPY", name: "Small caps vs large caps" }
+    - { numerator: "XLY", denominator: "XLP", name: "Cyclicals vs defensives" }
+
+  # SPY/TLT are needed for ratios, breadth and cross-asset even though they are
+  # not display rows in their own right.
+  support_tickers: ["SPY", "TLT"]
+
+# =============================================================================
+# FRED SERIES
+# transform: level | diff | mom_pct | yoy_pct | diff_3m_avg | avg_4w
+# frequency: daily | weekly | monthly | quarterly  (drives the staleness badge)
+# =============================================================================
+fred:
+  treasury_curve:
+    - { id: "DGS1MO", name: "1M",  tenor_years: 0.0833 }
+    - { id: "DGS3MO", name: "3M",  tenor_years: 0.25 }
+    - { id: "DGS6MO", name: "6M",  tenor_years: 0.5 }
+    - { id: "DGS1",   name: "1Y",  tenor_years: 1 }
+    - { id: "DGS2",   name: "2Y",  tenor_years: 2 }
+    - { id: "DGS3",   name: "3Y",  tenor_years: 3 }
+    - { id: "DGS5",   name: "5Y",  tenor_years: 5 }
+    - { id: "DGS7",   name: "7Y",  tenor_years: 7 }
+    - { id: "DGS10",  name: "10Y", tenor_years: 10 }
+    - { id: "DGS20",  name: "20Y", tenor_years: 20 }
+    - { id: "DGS30",  name: "30Y", tenor_years: 30 }
+
+  rates:
+    - { id: "T10Y2Y",  name: "2s10s spread",      short: "2s10s", units: "%",  frequency: daily }
+    - { id: "T10Y3M",  name: "3m10y spread",      short: "3m10y", units: "%",  frequency: daily }
+    - { id: "DFF",     name: "Effective Fed Funds", units: "%", frequency: daily }
+    - { id: "SOFR",    name: "SOFR",              units: "%",  frequency: daily }
+    - { id: "DFII10",  name: "10Y real yield",    units: "%",  frequency: daily }
+    - { id: "T10YIE",  name: "10Y breakeven",     units: "%",  frequency: daily }
+    - { id: "T5YIFR",  name: "5y5y fwd inflation", units: "%", frequency: daily }
+
+  credit:
+    # Some ICE BofA series have limited FRED history — available history is
+    # checked at load and lookback windows are sized to fit.
+    - { id: "BAMLH0A0HYM2", name: "US High Yield OAS",        short: "HY OAS", units: "%", frequency: daily }
+    - { id: "BAMLC0A0CM",   name: "US Investment Grade OAS",  short: "IG OAS", units: "%", frequency: daily }
+
+  macro:
+    - { id: "CPIAUCSL", name: "CPI (headline)",        transform: yoy_pct,     units: "% YoY",   frequency: monthly }
+    - { id: "CPILFESL", name: "CPI (core)",            transform: yoy_pct,     units: "% YoY",   frequency: monthly }
+    - { id: "PCEPILFE", name: "Core PCE price index",  transform: yoy_pct,     units: "% YoY",   frequency: monthly }
+    - { id: "PAYEMS",   name: "Nonfarm payrolls",      transform: diff_3m_avg, units: "k / mo",  frequency: monthly }
+    - { id: "UNRATE",   name: "Unemployment rate",     transform: level,       units: "%",       frequency: monthly }
+    - { id: "ICSA",     name: "Initial jobless claims", transform: avg_4w,     units: "k",       frequency: weekly, scale: 0.001 }
+    - { id: "A191RL1Q225SBEA", name: "Real GDP (SAAR)", transform: level,      units: "% q/q",   frequency: quarterly }
+    - { id: "RSAFS",    name: "Retail sales",          transform: mom_pct,     units: "% MoM",   frequency: monthly }
+    - { id: "INDPRO",   name: "Industrial production", transform: mom_pct,     units: "% MoM",   frequency: monthly }
+    - { id: "UMCSENT",  name: "UMich sentiment",       transform: level,       units: "index",   frequency: monthly }
+    - { id: "HOUST",    name: "Housing starts",        transform: level,       units: "k SAAR",  frequency: monthly }
+    # NFCI and the diffusion indices oscillate around zero, so a percentage
+    # change is meaningless — their year-on-year is a change in points.
+    - { id: "NFCI",     name: "Chicago Fed NFCI",      transform: level,       units: "index",   frequency: weekly, yoy_units: pts }
+    - { id: "WALCL",    name: "Fed balance sheet",     transform: level,       units: "$bn",     frequency: weekly, scale: 0.001 }
+    - { id: "M2SL",     name: "M2 money supply",       transform: yoy_pct,     units: "% YoY",   frequency: monthly }
+    # ISM PMI is not available on FRED. Regional Fed manufacturing surveys are
+    # used as proxies and are labelled as such on the page. IDs are validated
+    # against fred/series at startup and dropped with a warning if wrong.
+    - { id: "GACDISA066MSFRBNY", name: "Empire State mfg (PMI proxy)", transform: level, units: "diffusion", frequency: monthly, yoy_units: pts, proxy_for: "ISM Manufacturing" }
+    - { id: "GACDFSA066MSFRBPHI", name: "Philly Fed mfg (PMI proxy)",  transform: level, units: "diffusion", frequency: monthly, yoy_units: pts, proxy_for: "ISM Manufacturing" }
+
+  # Last-resort price levels if both yfinance and Polygon fail.
+  fallback_levels:
+    "^GSPC":    "SP500"
+    "^VIX":     "VIXCLS"
+    "CL=F":     "DCOILWTICO"
+    "EURUSD=X": "DEXUSEU"
+    "JPY=X":    "DEXJPUS"
+    "DX-Y.NYB": "DTWEXBGS"
+
+# =============================================================================
+# ECONOMIC CALENDAR
+# =============================================================================
+calendar:
+  lookahead_days: 7
+  # Release IDs are resolved by name via fred/releases at runtime — never
+  # hardcoded. These names must match FRED's official release names.
+  release_whitelist:
+    - "Employment Situation"
+    - "Consumer Price Index"
+    - "Producer Price Index"
+    - "Personal Income and Outlays"
+    - "Gross Domestic Product"
+    - "Advance Monthly Sales for Retail and Food Services"
+    - "G.17 Industrial Production and Capacity Utilization"
+    - "New Residential Construction"
+    - "Job Openings and Labor Turnover Survey"
+    - "Unemployment Insurance Weekly Claims Report"
+    - "Surveys of Consumers"
+
+  # FRED does not publish release times. These are TYPICAL times only and are
+  # labelled as such on the page.
+  typical_times_et:
+    "Employment Situation": "08:30"
+    "Consumer Price Index": "08:30"
+    "Producer Price Index": "08:30"
+    "Personal Income and Outlays": "08:30"
+    "Gross Domestic Product": "08:30"
+    "Advance Monthly Sales for Retail and Food Services": "08:30"
+    "G.17 Industrial Production and Capacity Utilization": "09:15"
+    "New Residential Construction": "08:30"
+    "Job Openings and Labor Turnover Survey": "10:00"
+    "Unemployment Insurance Weekly Claims Report": "08:30"
+    "Surveys of Consumers": "10:00"
+
+  # FOMC meeting dates, as the DECISION day (the second day of each two-day
+  # meeting), when the statement is released at 14:00 ET.
+  #
+  # !! MUST BE UPDATED EVERY YEAR !! The Fed publishes the following year's
+  # calendar in advance at:
+  #   https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+  # Verified 2026-09-11 for 2026 and 2027. When 2028 is published, append it
+  # here — nothing else needs to change.
+  fomc_meetings:
+    - { date: 2026-01-28, sep: false }
+    - { date: 2026-03-18, sep: true }
+    - { date: 2026-04-29, sep: false }
+    - { date: 2026-06-17, sep: true }
+    - { date: 2026-07-29, sep: false }
+    - { date: 2026-09-16, sep: true }
+    - { date: 2026-10-28, sep: false }
+    - { date: 2026-12-09, sep: true }
+    - { date: 2027-01-27, sep: false }
+    - { date: 2027-03-17, sep: true }
+    - { date: 2027-04-28, sep: false }
+    - { date: 2027-06-09, sep: true }
+    - { date: 2027-07-28, sep: false }
+    - { date: 2027-09-15, sep: true }
+    - { date: 2027-10-27, sep: false }
+    - { date: 2027-12-08, sep: true }
+  fomc_note: "Decision day of each two-day meeting; statement at 14:00 ET."
+  # How far ahead to look when reporting each macro series' next release date.
+  next_release_horizon_days: 60
+
+earnings:
+  enabled: true
+  # "Notable" = large cap. Rather than fetching a market cap per name at
+  # runtime (one slow yfinance .info call each, and the main rate-limit risk),
+  # the watchlist below IS the notability filter: it is curated to names above
+  # the threshold. Only dates and EPS estimates are fetched.
+  market_cap_threshold_usd: 10_000_000_000
+  max_calls: 80
+  watchlist:
+    - AAPL
+    - MSFT
+    - NVDA
+    - AMZN
+    - GOOGL
+    - META
+    - TSLA
+    - AVGO
+    - BRK-B
+    - JPM
+    - LLY
+    - V
+    - MA
+    - XOM
+    - UNH
+    - COST
+    - HD
+    - PG
+    - JNJ
+    - WMT
+    - ORCL
+    - NFLX
+    - AMD
+    - CRM
+    - BAC
+    - KO
+    - PEP
+    - CVX
+    - ADBE
+    - MRK
+    - ABBV
+    - TMO
+    - MCD
+    - CSCO
+    - ACN
+    - INTC
+    - QCOM
+    - TXN
+    - GS
+    - MS
+    - C
+    - WFC
+    - CAT
+    - BA
+    - GE
+    - DIS
+    - VZ
+    - T
+    - PFE
+    - NKE
+    - SBUX
+    - UPS
+    - FDX
+    - LMT
+    - RTX
+    - DE
+    - MU
+    - PANW
+    - NOW
+    - UBER
+
+# =============================================================================
+# ANALYTICS
+# =============================================================================
+analytics:
+  return_windows:
+    "1D": 1
+    "1W": 5
+    "1M": 21
+    "3M": 63
+    "1Y": 252
+  realised_vol_window: 20        # trading days
+  annualisation_factor: 252
+  zscore_lookback: 252           # trailing 1y distribution for 1D return z-scores
+  correlation_window: 60
+  percentile_lookback: 252
+  moving_averages: [50, 200]
+  min_observations: 30           # below this, a metric renders as "n/a"
+
+# --- "What stood out" flag thresholds ---------------------------------------
+flags:
+  return_zscore: 2.0             # |1D return z| above this
+  high_low_window: 252           # 52-week high/low lookback
+  ma_cross_tolerance_pct: 0.15   # how close counts as "at" the MA
+  vix_backwardation_ratio: 1.0   # VIX/VIX3M above this = backwardation
+  credit_spread_move_bp: 10      # 1D OAS move flagged above this
+  curve_inversion_tolerance_bp: 2
+  max_flags: 12
+
+# --- Curve move classification ----------------------------------------------
+curve:
+  classification_threshold_bp: 2  # moves smaller than this are "little changed"
+  short_tenor: "DGS2"
+  long_tenor: "DGS10"
+  comparison_windows: ["1D", "1W"]
+  history_windows_ago: ["1W", "1M", "1Y"]
+
+# --- Risk regime composite --------------------------------------------------
+# Descriptive indicator only — NOT a trading signal. Each component is
+# z-scored over `lookback` days, multiplied by `sign` (+1 = higher value means
+# more risk-off) and weighted. Missing components are dropped and the
+# remaining weights re-normalised.
+regime:
+  lookback: 504                  # ~2 years
+  label: "Risk regime composite"
+  components:
+    vix_level:        { weight: 0.20, sign:  1, source: "^VIX",          label: "VIX level" }
+    vix_term:         { weight: 0.15, sign:  1, source: "vix_ratio",     label: "VIX term structure" }
+    hy_spread:        { weight: 0.20, sign:  1, source: "BAMLH0A0HYM2",  label: "HY credit spread" }
+    spx_vs_200dma:    { weight: 0.15, sign: -1, source: "^GSPC",         label: "SPX vs 200dma" }
+    stock_bond_corr:  { weight: 0.10, sign:  1, source: "spy_tlt_corr",  label: "Stock-bond correlation" }
+    dxy_momentum:     { weight: 0.10, sign:  1, source: "DX-Y.NYB",      label: "USD 1m momentum" }
+    nfci:             { weight: 0.10, sign:  1, source: "NFCI",          label: "Financial conditions" }
+  bands:
+    - { max: -1.0, label: "Risk-on",        tone: "positive" }
+    - { max: -0.3, label: "Mildly risk-on", tone: "positive" }
+    - { max:  0.3, label: "Neutral",        tone: "neutral" }
+    - { max:  1.0, label: "Mildly risk-off", tone: "negative" }
+    - { max:  99.0, label: "Risk-off",      tone: "negative" }
+
+# --- Cross-asset correlation matrix -----------------------------------------
+cross_asset:
+  members:
+    - { key: "^GSPC",        label: "SPX" }
+    - { key: "^NDX",         label: "NDX" }
+    - { key: "^RUT",         label: "RUT" }
+    - { key: "TLT",          label: "TLT" }
+    - { key: "DX-Y.NYB",     label: "DXY" }
+    - { key: "GC=F",         label: "Gold" }
+    - { key: "CL=F",         label: "WTI" }
+    - { key: "BTC-USD",      label: "BTC" }
+    - { key: "BAMLH0A0HYM2", label: "HY OAS Δ", is_spread: true }
+
+# =============================================================================
+# DATA QUALITY
+# =============================================================================
+quality:
+  # Staleness fallback. Where a next-release date is known (macro series), a
+  # series is stale only once that scheduled release has passed without new
+  # data — an exact test. These grace periods are the fallback for series with
+  # no known release date, and must account for FRED dating an observation at
+  # the START of its period: August CPI is dated 2026-08-01 but published in
+  # mid-September, so a perfectly current monthly series can be ~75 days old.
+  staleness_grace_days:
+    daily: 5
+    weekly: 14
+    monthly: 95
+    quarterly: 200
+
+  # A price series whose most recent bar is older than this is not merely
+  # stale, it is misleading: it would be presented as the current level. Such
+  # tickers are dropped so the affected section degrades honestly. Yahoo does
+  # this periodically to thinly-followed symbols such as ^VIX3M.
+  max_price_age_days: 7
+  max_plausible_daily_move_pct:
+    default: 25.0
+    crypto: 40.0
+    volatility: 80.0
+  reject_non_positive_prices: true
+
+# =============================================================================
+# PRESENTATION
+# =============================================================================
+display:
+  kpi_strip: ["^GSPC", "^NDX", "DGS10", "T10Y2Y", "^VIX", "DX-Y.NYB", "CL=F", "GC=F", "BTC-USD"]
+  decimals:
+    price: 2
+    percent: 2
+    basis_points: 0
+    yield: 2
+  heatmap_windows: ["1D", "1W", "1M", "YTD"]
+  small_multiples_years: 5
+  disclaimer: >-
+    This tear-sheet is produced automatically for education and information
+    only. It is not investment advice, nor a recommendation to buy or sell any
+    security. Data may be delayed, incomplete or incorrect.
+
+email:
+  from_address: "onboarding@resend.dev"   # Resend free plan sender
+  subject_template: "{date} · SPX {spx} · 10Y {ten_year} · VIX {vix} · DXY {dxy}"
+  include_sections: ["kpi", "flags", "calendar"]

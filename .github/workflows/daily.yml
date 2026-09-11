@@ -1,0 +1,123 @@
+# Publishes the morning tear-sheet on US trading days.
+#
+# GitHub's cron runs in UTC and does not follow daylight saving, so this fires
+# twice and lets the application's schedule guard decide which firing counts:
+#
+#   12:00 UTC = 08:00 ET in summer (EDT), 07:00 ET in winter (EST)
+#   13:00 UTC = 09:00 ET in summer (EDT), 08:00 ET in winter (EST)
+#
+# Both land inside the configured 07:00–11:00 ET publish window, so the guard's
+# idempotency check is what prevents two sheets: the second firing sees today's
+# archive file already committed and stands down with a zero exit.
+#
+# Scheduled jobs on GitHub also start late under load — sometimes by tens of
+# minutes — which is why the window is hours wide rather than a target time.
+#
+# INACTIVITY: GitHub's docs state that "in a public repository, scheduled
+# workflows are automatically disabled when no repository activity has occurred
+# in 60 days". The docs do NOT define what counts as activity, and do NOT say
+# whether the commits this workflow makes with GITHUB_TOKEN reset the timer —
+# so do not rely on them. If the workflow is ever disabled, re-enable it from
+# the Actions tab: select this workflow in the sidebar, then "Enable workflow".
+# See the README for the mitigations.
+
+name: Daily tear-sheet
+
+on:
+  schedule:
+    - cron: "0 12 * * 1-5"
+    - cron: "0 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the schedule guard and overwrite today's sheet"
+        type: boolean
+        default: false
+      skip_email:
+        description: "Build and publish, but do not send the email"
+        type: boolean
+        default: false
+
+# Needed by the commit step that writes docs/ back to the default branch.
+permissions:
+  contents: write
+
+# Runs must never overlap: two jobs committing docs/ would race. The second
+# firing queues behind the first rather than cancelling it, so it gets a chance
+# to observe the committed sheet and stand down cleanly.
+concurrency:
+  group: daily-tearsheet
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # --with-deps installs the shared libraries headless Chromium needs on a
+      # bare Ubuntu runner; without it the PDF step fails at launch.
+      - name: Install Chromium for PDF rendering
+        run: playwright install --with-deps chromium
+
+      - name: Build and publish the tear-sheet
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          python -m tearsheet run \
+            --publish \
+            ${{ inputs.force && '--force' || '' }} \
+            ${{ inputs.skip_email && '--no-email' || '' }}
+
+      - name: Commit the published sheet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --staged --quiet; then
+            echo "No changes to publish — the guard stood down or nothing changed."
+            exit 0
+          fi
+          git commit -m "Publish tear-sheet for $(date -u +%Y-%m-%d)"
+          # Re-check the remote in case a manual run landed in between.
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      # PDFs are deliberately not committed: one per trading day would add
+      # hundreds of megabytes a year to a repository that never forgets.
+      - name: Upload the PDF as a workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tearsheet-pdf
+          path: docs/*.pdf
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload the run log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tearsheet-logs
+          path: logs/
+          if-no-files-found: ignore
+          retention-days: 14

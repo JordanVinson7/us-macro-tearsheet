@@ -1,0 +1,12 @@
+{% set ctx = result.context %}
+<ul class="headlines">
+  {% for item in ctx.headlines %}
+  <li>
+    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+    <div class="meta">
+      {{ item.publisher }}{% if item.time %} · {{ item.time }}{% endif %}
+      {% if item.tickers %} · {{ item.tickers | join(', ') }}{% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>

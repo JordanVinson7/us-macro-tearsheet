@@ -1,0 +1,61 @@
+{# Reusable table and formatting macros.
+   Every change figure carries an explicit sign as well as a colour, so colour
+   is never the only signal. #}
+
+{% macro change(value, kind='percent', decimals=2) -%}
+  {%- if kind == 'bp' -%}
+    <span class="{{ value | tone }}">{{ value | bp(decimals) }}</span>
+  {%- elif kind == 'plain' -%}
+    <span class="{{ value | tone }}">{{ value | signed(decimals) }}</span>
+  {%- else -%}
+    <span class="{{ value | tone }}">{{ value | percent(decimals) }}</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro stale_badge(is_stale) -%}
+  {%- if is_stale %}<span class="badge badge--stale" title="Latest observation is later than its scheduled release">stale</span>{% endif -%}
+{%- endmacro %}
+
+{% macro fallback_badge(row) -%}
+  {%- if row.is_fallback %}<span class="badge badge--fallback" title="{{ row.source }}">fallback</span>{% endif -%}
+{%- endmacro %}
+
+{# A performance table: returns across windows, distance from highs and moving
+   averages, realised volatility and the one-day return z-score. #}
+{% macro performance_table(rows, columns, moving_averages, vol_window, caption=None) %}
+<div class="table-scroll">
+  <table>
+    {% if caption %}<caption>{{ caption }}</caption>{% endif %}
+    <thead>
+      <tr>
+        <th scope="col">Instrument</th>
+        <th scope="col">Last</th>
+        {% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}
+        <th scope="col" title="Percent below the trailing 52-week high">vs 52w high</th>
+        {% for window in moving_averages %}<th scope="col">vs {{ window }}d</th>{% endfor %}
+        <th scope="col" title="Annualised realised volatility over {{ vol_window }} sessions">{{ vol_window }}d vol</th>
+        <th scope="col" title="One-day return versus its trailing 1-year distribution">1D z</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.label }}{{ fallback_badge(row) }}</td>
+        {% if row.available %}
+          <td>{{ row.last | level }}</td>
+          {% for column in columns %}<td>{{ change(row.returns.get(column)) }}</td>{% endfor %}
+          <td>{{ change(row.from_high) }}</td>
+          {% for window in moving_averages %}<td>{{ change(row.from_ma.get(window)) }}</td>{% endfor %}
+          <td>{{ row.volatility | level(1) }}</td>
+          <td>{{ change(row.zscore, 'plain', 1) }}</td>
+        {% else %}
+          <td colspan="{{ 4 + columns | length + moving_averages | length }}" class="na">
+            data unavailable
+          </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}

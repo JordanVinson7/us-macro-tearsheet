@@ -1,0 +1,61 @@
+{
+  "days_to_fomc": 5,
+  "next_release_by_series": {
+    "A191RL1Q225SBEA": "2026-09-30",
+    "CPIAUCSL": "2026-09-11",
+    "CPILFESL": "2026-09-11",
+    "GACDFSA066MSFRBPHI": "2026-09-17",
+    "GACDISA066MSFRBNY": "2026-09-15",
+    "HOUST": "2026-09-17",
+    "ICSA": "2026-09-17",
+    "INDPRO": "2026-09-18",
+    "M2SL": "2026-09-22",
+    "NFCI": "2026-09-16",
+    "PAYEMS": "2026-10-02",
+    "PCEPILFE": "2026-09-30",
+    "RSAFS": "2026-09-16",
+    "UMCSENT": "2026-09-25",
+    "UNRATE": "2026-10-02",
+    "WALCL": "2026-09-17"
+  },
+  "today": [
+    {
+      "date": "2026-09-11",
+      "is_today": true,
+      "name": "Consumer Price Index",
+      "release_id": 10,
+      "typical_time_et": "08:30"
+    }
+  ],
+  "unmatched": [],
+  "upcoming": [
+    {
+      "date": "2026-09-16",
+      "is_today": false,
+      "name": "Advance Monthly Sales for Retail and Food Services",
+      "release_id": 9,
+      "typical_time_et": "08:30"
+    },
+    {
+      "date": "2026-09-17",
+      "is_today": false,
+      "name": "New Residential Construction",
+      "release_id": 27,
+      "typical_time_et": "08:30"
+    },
+    {
+      "date": "2026-09-17",
+      "is_today": false,
+      "name": "Unemployment Insurance Weekly Claims Report",
+      "release_id": 180,
+      "typical_time_et": "08:30"
+    },
+    {
+      "date": "2026-09-18",
+      "is_today": false,
+      "name": "G.17 Industrial Production and Capacity Utilization",
+      "release_id": 13,
+      "typical_time_et": "09:15"
+    }
+  ]
+}

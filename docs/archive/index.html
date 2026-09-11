@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archive — US Macro & Markets Morning Tear-Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>/* --- screen.css --- */
+/* =============================================================================
+   US Macro & Markets Morning Tear-Sheet — screen styles.
+
+   A light, dense, bank research-note look: white ground, a single navy accent,
+   a serif for headings against a clean sans for everything else.
+
+   The colour tokens below are mirrored in tearsheet/charts/template.py so the
+   charts and the page share one palette.
+   ============================================================================= */
+
+:root {
+  --navy: #14375f;
+  --navy-light: #2f6296;
+  --navy-wash: #f4f7fa;
+  --ink: #1c1e21;
+  --muted: #6b7280;
+  --faint: #9aa1ab;
+  --rule: #e7e9ee;
+  --rule-strong: #c3c8d2;
+  --paper: #ffffff;
+  --pos: #0b7a5a;
+  --neg: #b3261e;
+  --warn: #9a6a00;
+  --warn-wash: #fdf6e6;
+
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --measure: 1180px;
+  --gap: 24px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
+
+a { color: var(--navy); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Layout --------------------------------------------------------------- */
+
+.wrap { max-width: var(--measure); margin: 0 auto; padding: 0 20px; }
+
+.masthead {
+  border-bottom: 2px solid var(--navy);
+  padding: 28px 0 16px;
+}
+.masthead__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+.masthead__title {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.masthead__subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+.masthead__date {
+  font-family: var(--serif);
+  font-size: 16px;
+  text-align: right;
+  white-space: nowrap;
+}
+.masthead__asof {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+.masthead__asof span { display: block; }
+
+/* --- Sticky section navigation -------------------------------------------- */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: saturate(160%) blur(8px);
+  border-bottom: 1px solid var(--rule);
+}
+.nav__inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav__inner::-webkit-scrollbar { display: none; }
+.nav a {
+  display: block;
+  padding: 11px 0;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+.nav a:hover { color: var(--navy); text-decoration: none; }
+.nav a.is-active { color: var(--navy); border-bottom-color: var(--navy); }
+
+/* --- Sections ------------------------------------------------------------- */
+
+.section { padding: 30px 0 8px; scroll-margin-top: 56px; }
+.section + .section { border-top: 1px solid var(--rule); }
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.section__title {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 600;
+  margin: 0;
+}
+.section__title .num {
+  color: var(--faint);
+  font-size: 14px;
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.block { margin: 20px 0; }
+.block__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.block__note { font-size: 11px; color: var(--faint); margin: 6px 0 0; }
+
+.grid { display: grid; gap: var(--gap); }
+.grid--2 { grid-template-columns: 1fr 1fr; }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--sidebar { grid-template-columns: 2fr 1fr; }
+
+/* --- KPI strip ------------------------------------------------------------ */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 4px 0 22px;
+}
+.kpi { background: var(--paper); padding: 10px 12px; }
+.kpi__label {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kpi__value {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+.kpi__change { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* --- Flags panel ---------------------------------------------------------- */
+
+.flags {
+  background: var(--navy-wash);
+  border-left: 3px solid var(--navy);
+  padding: 16px 20px;
+}
+.flags__title {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.flags ul { margin: 0; padding: 0; list-style: none; }
+.flags li {
+  padding: 5px 0 5px 22px;
+  position: relative;
+  font-size: 13px;
+  border-top: 1px solid rgba(20, 55, 95, 0.08);
+}
+.flags li:first-child { border-top: 0; }
+.flags li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--navy-light);
+}
+.flags li.sev-high::before { background: var(--neg); }
+.flags__empty { color: var(--muted); font-size: 13px; margin: 0; }
+
+/* --- Tables --------------------------------------------------------------- */
+
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+caption {
+  text-align: left;
+  font-size: 11px;
+  color: var(--faint);
+  padding-bottom: 6px;
+}
+th, td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+  white-space: nowrap;
+}
+th {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule-strong);
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+}
+th:first-child, td:first-child { text-align: left; }
+tbody tr:hover { background: var(--navy-wash); }
+tbody tr.is-group td {
+  background: var(--navy-wash);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--navy);
+}
+tfoot td { border-bottom: 0; border-top: 1px solid var(--rule-strong); font-weight: 600; }
+
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+.flat { color: var(--muted); }
+.na { color: var(--faint); font-style: italic; }
+.dim { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* --- Badges --------------------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-left: 5px;
+  font-weight: 600;
+}
+.badge--stale { background: var(--warn-wash); color: var(--warn); border: 1px solid #e8d9b0; }
+.badge--fallback { background: #eef2f7; color: var(--navy); border: 1px solid #d4dde7; }
+.badge--proxy { background: #f2f0f7; color: #57458c; border: 1px solid #ddd7ea; }
+.badge--partial { background: var(--warn-wash); color: var(--warn); border: 1px solid #e8d9b0; }
+
+/* --- Charts --------------------------------------------------------------- */
+
+.chart { margin: 6px 0 4px; }
+.chart .plotly-graph-div { width: 100% !important; }
+
+/* --- Callouts ------------------------------------------------------------- */
+
+.callout {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-strong);
+  background: #fcfcfd;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.callout--warn { border-left-color: var(--warn); background: var(--warn-wash); color: var(--warn); }
+
+.stat-row { display: flex; gap: 28px; flex-wrap: wrap; margin: 10px 0; }
+.stat__label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat__value {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Regime --------------------------------------------------------------- */
+
+.regime__score {
+  font-family: var(--serif);
+  font-size: 38px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.regime__label {
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.regime__label.positive { color: var(--pos); }
+.regime__label.neutral { color: var(--muted); }
+.regime__label.negative { color: var(--neg); }
+
+/* --- Headlines ------------------------------------------------------------ */
+
+.headlines { list-style: none; margin: 0; padding: 0; }
+.headlines li { padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.headlines a { font-size: 13.5px; color: var(--ink); }
+.headlines a:hover { color: var(--navy); }
+.headlines .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* --- Footer --------------------------------------------------------------- */
+
+.footer {
+  margin-top: 36px;
+  border-top: 2px solid var(--navy);
+  padding: 22px 0 48px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer h2 {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--ink);
+  margin: 20px 0 8px;
+}
+.footer h3 { font-size: 11.5px; color: var(--ink); margin: 12px 0 3px; }
+.footer ul { margin: 0 0 8px; padding-left: 18px; }
+.footer li { margin: 2px 0; }
+.disclaimer {
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--rule);
+  background: #fcfcfd;
+  font-size: 11.5px;
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .kpis { grid-template-columns: repeat(3, 1fr); }
+  .grid--3, .grid--sidebar { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 680px) {
+  body { font-size: 13.5px; }
+  .masthead__title { font-size: 23px; }
+  .masthead__row { flex-direction: column; align-items: flex-start; }
+  .masthead__date, .masthead__asof { text-align: left; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .grid--2, .grid--3, .grid--sidebar { grid-template-columns: 1fr; }
+  .section__title { font-size: 18px; }
+  th, td { padding: 5px 8px; }
+}
+
+
+/* --- print.css --- */
+/* =============================================================================
+   Print styles — used for the PDF rendered by headless Chromium.
+
+   A4, the navigation removed, and sections kept off page boundaries. The
+   running header and footer (report date, page numbers) are supplied by the
+   PDF renderer itself: Chromium does not implement CSS @page margin boxes, so
+   Playwright's headerTemplate/footerTemplate is the only way to get them.
+   ============================================================================= */
+
+@page {
+  size: A4;
+  /* Margins are set by the PDF renderer rather than here, because the running
+     header and footer need reserved space and Playwright's margin option is
+     what Chromium honours alongside displayHeaderFooter. */
+}
+
+@media print {
+  :root { --measure: 100%; }
+
+  body {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    background: #fff;
+  }
+
+  .wrap { max-width: none; padding: 0; }
+
+  /* Interactive furniture has no meaning on paper. */
+  .nav,
+  .no-print,
+  .plotly .modebar { display: none !important; }
+
+  .masthead { padding-top: 0; }
+  .masthead__title { font-size: 19pt; }
+
+  a { color: var(--ink); text-decoration: none; }
+  /* Headline links are the only ones whose target is not otherwise visible. */
+  .headlines a::after {
+    content: " (" attr(href) ")";
+    font-size: 7pt;
+    color: var(--faint);
+    word-break: break-all;
+  }
+
+  .section {
+    break-inside: auto;
+    padding: 14pt 0 4pt;
+  }
+  .section__head { break-after: avoid; }
+  .block__title { break-after: avoid; }
+  .chart, .flags, .callout, .kpis { break-inside: avoid; }
+  table { break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+
+  /* The larger sections each start a fresh page so tables are not split
+     across a fold in the middle of a row group. */
+  #section-equities,
+  #section-rates,
+  #section-macro,
+  #section-cross_asset,
+  .footer { break-before: page; }
+
+  th { position: static; }
+  tbody tr:hover { background: none; }
+
+  /* On screen a wide table scrolls sideways; on paper it would simply be
+     clipped, silently losing the right-hand columns. Tightening the type and
+     padding lets the full 13-column performance tables fit an A4 width. */
+  .table-scroll { overflow: visible; }
+  table { font-size: 7pt; }
+  th, td { padding: 2pt 3pt; }
+  th { font-size: 6.2pt; letter-spacing: 0.02em; }
+
+  .kpis { grid-template-columns: repeat(9, 1fr); }
+  .kpi__value { font-size: 12pt; }
+  .grid--2, .grid--3, .grid--sidebar { grid-template-columns: 1fr 1fr; }
+
+  .footer { padding-bottom: 0; }
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap masthead__row">
+    <div>
+      <h1 class="masthead__title">Archive</h1>
+      <p class="masthead__subtitle">US Macro & Markets Morning Tear-Sheet</p>
+    </div>
+    <div class="masthead__date"><a href="../index.html">← Latest sheet</a></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="section">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Day</th><th scope="col">Size</th><th scope="col"></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="2026-09-11.html">11 September 2026</a></td>
+              <td class="dim">Friday</td>
+              <td>535 KB</td>
+              <td><a href="2026-09-11.html">Open</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="block__note">
+        1 sheet(s) archived.
+Sheets are retained for 120 days.      </p>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>Generated 11 Sep 2026, 19:30 EDT.</p>
+  </div>
+</footer>
+</body>
+</html>

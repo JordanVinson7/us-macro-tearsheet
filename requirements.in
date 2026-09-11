@@ -1,0 +1,29 @@
+# Loose top-level dependencies. requirements.txt is the pinned, resolved
+# lockfile generated from this file and is what CI installs.
+
+# Core data
+pandas
+numpy
+requests
+pyyaml
+pydantic
+python-dotenv
+tenacity
+
+# Data sources
+yfinance
+feedparser
+exchange-calendars
+
+# Presentation
+plotly
+jinja2
+rich
+
+# Delivery
+playwright
+resend
+
+# Dev
+pytest
+ruff

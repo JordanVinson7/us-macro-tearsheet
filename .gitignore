@@ -1,0 +1,36 @@
+# --- Secrets -----------------------------------------------------------------
+# NEVER commit real credentials. Only .env.example (placeholders) is tracked.
+.env
+.env.*
+!.env.example
+
+# --- Local run output --------------------------------------------------------
+# Local runs write here so they can never conflict with the CI-committed docs/.
+output/
+logs/
+*.pdf
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# --- Tooling caches ----------------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- macOS / editors ---------------------------------------------------------
+.DS_Store
+.vscode/
+.idea/
+
+# --- Local tooling -----------------------------------------------------------
+# Machine-specific: absolute paths to a local interpreter and output directory.
+.claude/

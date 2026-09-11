@@ -1,0 +1,95 @@
+{% set ctx = result.context %}
+
+<div class="grid grid--sidebar">
+  <div>
+    <div class="block">
+      <h3 class="block__title">Releases today</h3>
+      {% if ctx.today %}
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Release</th><th scope="col">Time (typical, ET)</th></tr></thead>
+            <tbody>
+              {% for entry in ctx.today %}
+                <tr><td>{{ entry.name }}</td><td>{{ entry.time or '—' }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="dim">No major scheduled releases today.</p>
+      {% endif %}
+      <p class="block__note">
+        FRED does not publish release times; those shown are typical and are not guaranteed.
+      </p>
+    </div>
+
+    <div class="block">
+      <h3 class="block__title">Next {{ ctx.lookahead_days }} days</h3>
+      {% if ctx.upcoming %}
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Date</th><th scope="col">Release</th><th scope="col">Time (typical)</th></tr></thead>
+            <tbody>
+              {% for entry in ctx.upcoming %}
+                <tr>
+                  <td>{{ entry.weekday }} {{ entry.date.strftime('%d %b') }}</td>
+                  <td style="text-align:left">{{ entry.name }}</td>
+                  <td>{{ entry.time or '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="dim">No whitelisted releases in the window.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="block">
+      <h3 class="block__title">FOMC</h3>
+      {% if ctx.fomc %}
+        <div class="callout">
+          <div class="stat__value">{{ ctx.fomc.date.strftime('%d %b %Y') }}</div>
+          <div>{{ ctx.days_to_fomc }} days away{% if ctx.fomc.sep %}, with a Summary of Economic Projections{% endif %}.</div>
+          <p class="block__note">{{ ctx.fomc_note }}</p>
+        </div>
+      {% else %}
+        <p class="dim">No FOMC date configured.</p>
+      {% endif %}
+    </div>
+
+    <div class="block">
+      <h3 class="block__title">Notable earnings</h3>
+      {% if ctx.earnings and ctx.earnings.total > 0 %}
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Ticker</th><th scope="col">Session</th><th scope="col">Time</th><th scope="col">EPS est.</th></tr></thead>
+            <tbody>
+              {% for label, group in [('Before open', ctx.earnings.before_open), ('After close', ctx.earnings.after_close), ('Unscheduled', ctx.earnings.unscheduled)] %}
+                {% for event in group %}
+                  <tr>
+                    <td>{{ event.ticker }}</td>
+                    <td>{{ label }}</td>
+                    <td>{{ event.time_label }}</td>
+                    <td>{{ event.eps_estimate | level }}</td>
+                  </tr>
+                {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% elif ctx.earnings %}
+        <p class="dim">
+          None of the {{ ctx.earnings.checked }} watchlist companies report today.
+        </p>
+      {% else %}
+        <p class="dim">Earnings calendar unavailable.</p>
+      {% endif %}
+      <p class="block__note">
+        Watchlist of companies above roughly ${{ '%.0f' | format(ctx.earnings_threshold_bn) }}bn market capitalisation.
+      </p>
+    </div>
+  </div>
+</div>

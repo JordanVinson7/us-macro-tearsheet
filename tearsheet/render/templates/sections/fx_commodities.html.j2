@@ -1,0 +1,28 @@
+{% from '_macros.html.j2' import performance_table %}
+{% set ctx = result.context %}
+
+{% for group_name, rows in ctx.groups.items() %}
+<div class="block">
+  <h3 class="block__title">{{ group_name }}</h3>
+  {{ performance_table(rows, ctx.return_columns, ctx.moving_averages, ctx.vol_window) }}
+</div>
+{% endfor %}
+
+<div class="grid grid--2">
+  <div class="block">
+    <h3 class="block__title">One-month performance</h3>
+    <div class="chart">{{ ctx.charts.performance | safe }}</div>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Copper/gold vs the 10-year yield</h3>
+    {% if ctx.charts.copper_gold is defined %}
+      <div class="chart">{{ ctx.charts.copper_gold | safe }}</div>
+      <p class="block__note">
+        The copper/gold ratio is a common proxy for growth expectations. Plotting
+        it against the 10-year yield compares it with what the bond market is pricing.
+      </p>
+    {% else %}
+      <div class="callout callout--warn">{{ ctx.copper_gold_note }}</div>
+    {% endif %}
+  </div>
+</div>

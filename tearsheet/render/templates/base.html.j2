@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }} — {{ run_date | day }}</title>
+<meta name="description" content="Automated pre-open briefing on US markets and the US economy for {{ run_date | day }}.">
+<meta name="robots" content="index, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+{# Plotly is loaded once for the whole page. Embedding it per figure would add
+   roughly 3MB for each of the dozen charts below. #}
+<script src="{{ plotly_cdn }}" charset="utf-8"></script>
+<style>{{ stylesheet }}</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead__row">
+    <div>
+      <h1 class="masthead__title">{{ meta.title }}</h1>
+      <p class="masthead__subtitle">
+        {{ meta.subtitle }} · prepared by {{ meta.author }}
+        {% if is_mock %}<span class="badge badge--partial">mock data</span>{% endif %}
+      </p>
+    </div>
+    <div>
+      <div class="masthead__date">{{ run_date.strftime('%A %d %B %Y') }}</div>
+      <div class="masthead__asof">
+        {% for source, stamp in footer_as_of.items() %}
+          <span>{{ source }} as of {{ stamp }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav no-print" aria-label="Sections">
+  <div class="nav__inner">
+    {% for item in nav %}
+      <a href="#section-{{ item.key }}" data-target="section-{{ item.key }}">{{ item.title }}</a>
+    {% endfor %}
+    <a href="#footer">Sources &amp; method</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  {% for entry in sections %}
+    {% set result = entry.result %}
+    <section class="section" id="section-{{ result.key }}">
+      <div class="section__head">
+        <h2 class="section__title">
+          <span class="num">{{ loop.index }}</span>{{ result.title }}
+          {% if result.status.value == 'partial' %}
+            <span class="badge badge--partial" title="Some data was unavailable">partial</span>
+          {% endif %}
+        </h2>
+      </div>
+      {% include entry.template %}
+    </section>
+  {% endfor %}
+</main>
+
+<footer class="footer" id="footer">
+  <div class="wrap">
+    <h2>Data sources</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Section</th><th scope="col">Status</th><th scope="col">Sources</th></tr>
+        </thead>
+        <tbody>
+          {% for row in footer.source_rows %}
+          <tr>
+            <td>{{ row.section }}</td>
+            <td>{{ row.status }}</td>
+            <td style="text-align:left; white-space:normal;">
+              {{ row.sources | join('; ') }}
+              {% if row.used_fallback %}<span class="badge badge--fallback">fallback used</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Methodology</h2>
+    {% for entry in footer.methodology %}
+      <h3>{{ entry.section }}</h3>
+      <ul>{% for note in entry.notes %}<li>{{ note }}</li>{% endfor %}</ul>
+    {% endfor %}
+
+    {% if footer.missing_prices or footer.invalid_series or footer.suspect_returns %}
+      <h2>Data quality</h2>
+      <ul>
+        {% if footer.missing_prices %}
+          <li>No source could supply: {{ footer.missing_prices | join(', ') }}.</li>
+        {% endif %}
+        {% if footer.invalid_series %}
+          <li>FRED did not recognise: {{ footer.invalid_series | join(', ') }}.</li>
+        {% endif %}
+        {% for ticker, dates in footer.suspect_returns.items() %}
+          <li>
+            {{ ticker }}: {{ dates | length }} implausible one-day move(s) detected — on
+            continuous futures these are contract rolls. Levels are kept; returns
+            spanning those dates are suppressed.
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <h2>About this run</h2>
+    <ul>
+      <li>Generated {{ generated_at.strftime('%d %b %Y, %H:%M:%S %Z') }} by tearsheet v{{ version }} ({{ footer.mode }} mode).</li>
+      <li>{{ footer.total_api_calls }} API calls in {{ '%.1f' | format(footer.elapsed) }}s{% if footer.api_calls %} ({% for name, count in footer.api_calls.items() %}{{ name }} {{ count }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}.</li>
+      <li>{{ footer.warnings | length }} warning(s) recorded during collection.</li>
+    </ul>
+
+    <p class="disclaimer"><strong>Disclaimer.</strong> {{ disclaimer }}</p>
+  </div>
+</footer>
+
+<script>
+// Highlight the nav entry for whichever section is currently on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a[data-target]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  var byId = {};
+  links.forEach(function (link) { byId[link.dataset.target] = link; });
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      links.forEach(function (link) { link.classList.remove('is-active'); });
+      if (byId[entry.target.id]) byId[entry.target.id].classList.add('is-active');
+    });
+  }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+
+  document.querySelectorAll('section.section').forEach(function (section) {
+    observer.observe(section);
+  });
+})();
+</script>
+</body>
+</html>

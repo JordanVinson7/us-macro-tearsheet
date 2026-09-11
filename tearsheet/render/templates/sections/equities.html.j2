@@ -1,0 +1,87 @@
+{% from '_macros.html.j2' import change, performance_table %}
+{% set ctx = result.context %}
+
+<div class="block">
+  <h3 class="block__title">Indices</h3>
+  {{ performance_table(ctx.index_rows, ctx.return_columns, ctx.moving_averages, ctx.vol_window) }}
+</div>
+
+<div class="block">
+  <h3 class="block__title">Sectors</h3>
+  {{ performance_table(ctx.sector_rows, ctx.return_columns, ctx.moving_averages, ctx.vol_window) }}
+</div>
+
+<div class="grid grid--sidebar">
+  <div class="block">
+    <h3 class="block__title">Sector returns</h3>
+    <div class="chart">{{ ctx.charts.heatmap | safe }}</div>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Breadth</h3>
+    <div class="stat-row">
+      {% for window, share in ctx.breadth.items() %}
+      <div>
+        <div class="stat__label">Above {{ window }}d</div>
+        <div class="stat__value">{% if share is none %}<span class="na">n/a</span>{% else %}{{ share | level(0) }}%{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="block__note">
+      Share of the {{ ctx.sector_rows | length }} sector ETFs trading above their
+      moving averages. Members without enough history are excluded from both
+      the numerator and the denominator.
+    </p>
+  </div>
+</div>
+
+<div class="grid grid--2">
+  <div class="block">
+    <h3 class="block__title">Indices, year to date</h3>
+    <div class="chart">{{ ctx.charts.ytd | safe }}</div>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Relative value (1 year, indexed to 100)</h3>
+    <div class="chart">{{ ctx.charts.ratios | safe }}</div>
+  </div>
+</div>
+
+<div class="block">
+  <h3 class="block__title">Previous session intraday — {{ ctx.intraday_session | day }}</h3>
+  {% if ctx.charts.intraday is defined %}
+    <div class="grid grid--sidebar">
+      <div class="chart">{{ ctx.charts.intraday | safe }}</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">ETF</th><th scope="col">VWAP</th><th scope="col">Session</th>
+              <th scope="col">1st hr</th><th scope="col">Last hr</th>
+              <th scope="col">High</th><th scope="col">Low</th><th scope="col">Vol</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ctx.intraday_stats %}
+            <tr>
+              <td>{{ row.ticker }}</td>
+              <td>{{ row.vwap | level }}</td>
+              <td>{{ change(row.session_return) }}</td>
+              <td>{{ change(row.first_hour) }}</td>
+              <td>{{ change(row.last_hour) }}</td>
+              <td>{{ row.high_time or '—' }}</td>
+              <td>{{ row.low_time or '—' }}</td>
+              <td>{{ row.volatility | level(1) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="block__note">
+          Minute bars from Polygon, regular session only (09:30–16:00 ET).
+          Paths are indexed to each instrument's opening print. Volatility is
+          annualised from minute returns.
+        </p>
+      </div>
+    </div>
+  {% else %}
+    <div class="callout callout--warn">Intraday minute bars were unavailable for this session.</div>
+  {% endif %}
+</div>

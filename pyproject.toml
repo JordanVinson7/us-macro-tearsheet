@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tearsheet"
+version = "0.1.0"
+description = "Automated US macro & markets morning tear-sheet (HTML, PDF and email)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Jordan Vinson" }]
+
+[project.scripts]
+tearsheet = "tearsheet.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tearsheet*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "D",   # pydocstyle — docstrings are a stated requirement for this project
+    "ANN", # flake8-annotations — type hints are a stated requirement
+]
+ignore = [
+    "D107",    # __init__ docstring (covered by the class docstring)
+    "D203",    # incompatible with D211
+    "D213",    # incompatible with D212
+    "ANN401",  # allow typing.Any where genuinely dynamic
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests document themselves through their names; helper classes and
+# fixtures do not need docstrings or exhaustive annotations.
+"tests/*" = ["D101", "D102", "D103", "ANN201", "ANN001", "ANN204"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]

@@ -1,0 +1,52 @@
+{% from '_macros.html.j2' import change %}
+{% set ctx = result.context %}
+
+<div class="grid grid--2">
+  <div>
+    <h3 class="block__title">Equity futures vs prior cash close</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Contract</th><th scope="col">Last</th><th scope="col">Cash close</th><th scope="col">Change</th></tr>
+        </thead>
+        <tbody>
+          {% for row in ctx.futures_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.price | level }}</td>
+            <td>{{ row.prior_close | level }}</td>
+            <td>{{ change(row.change_pct) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <h3 class="block__title">Overnight moves</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Instrument</th><th scope="col">Last</th><th scope="col">Prior close</th><th scope="col">Change</th></tr>
+        </thead>
+        <tbody>
+          {% for row in ctx.other_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.price | level }}</td>
+            <td>{{ row.prior_close | level }}</td>
+            <td>{{ change(row.change_pct) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<p class="block__note">
+  Cash session {{ ctx.cash_session | day }}.
+  {% if ctx.quoted_at %}Quotes taken {{ ctx.quoted_at.strftime('%H:%M %Z') }}.{% endif %}
+  Indicative and possibly delayed.
+</p>

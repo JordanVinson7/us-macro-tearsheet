@@ -1,0 +1,51 @@
+# Lint and test on every push and pull request.
+#
+# No API keys are needed: the whole suite runs on synthetic data and on the
+# committed fixtures, so CI never touches a rate limit or a paid endpoint.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    # The daily job commits docs/ on every trading day. Re-running lint and
+    # tests for a generated HTML file would burn ~250 CI runs a year and prove
+    # nothing, since no source changed.
+    paths-ignore:
+      - "docs/**"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+      - name: Test
+        run: pytest -q

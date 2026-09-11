@@ -1,0 +1,222 @@
+{
+  "fred_invalid": [],
+  "missing": [
+    "^VIX3M"
+  ],
+  "price_sources": {
+    "BTC-USD": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "BZ=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "CL=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "CNY=X": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "DX-Y.NYB": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "ES=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "ETH-USD": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "EURUSD=X": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "GBPUSD=X": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "GC=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "HG=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "HYG": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "IWM": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "JPY=X": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "LQD": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "NG=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "NQ=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "RSP": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "RTY=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "SI=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "SPY": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "TLT": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLB": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLC": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLE": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLF": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLI": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLK": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLP": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLRE": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLU": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLV": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "XLY": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "YM=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "ZN=F": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "^DJI": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "^GSPC": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "^NDX": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "^RUT": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ],
+    "^VIX": [
+      "yfinance",
+      "Yahoo Finance daily bars",
+      false
+    ]
+  },
+  "run_date": "2026-09-11",
+  "session": "2026-09-10",
+  "suspect_returns": {
+    "NG=F": [
+      "2024-04-29",
+      "2026-01-20",
+      "2026-01-26",
+      "2026-01-29",
+      "2026-02-02"
+    ],
+    "SI=F": [
+      "2026-01-30"
+    ]
+  }
+}

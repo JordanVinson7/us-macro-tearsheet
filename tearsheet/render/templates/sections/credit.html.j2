@@ -1,0 +1,42 @@
+{% from '_macros.html.j2' import change %}
+{% set ctx = result.context %}
+
+<div class="grid grid--sidebar">
+  <div class="block">
+    <h3 class="block__title">Option-adjusted spreads</h3>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Spread</th><th scope="col">Level</th>
+            <th scope="col">1D</th><th scope="col">1W</th><th scope="col">1M</th>
+            <th scope="col">Percentile</th><th scope="col">z</th><th scope="col">Observed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in ctx.rows %}
+          <tr>
+            <td>{{ row.name }}</td>
+            <td>{{ row.level | level }}%</td>
+            <td>{{ change(row.change_1d, 'bp', 0) }}</td>
+            <td>{{ change(row.change_1w, 'bp', 0) }}</td>
+            <td>{{ change(row.change_1m, 'bp', 0) }}</td>
+            <td>{{ row.percentile | ordinal }}</td>
+            <td>{{ change(row.zscore, 'plain', 2) }}</td>
+            <td class="dim">{{ row.observation_date | day('%d %b') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="block__note">
+      Percentiles and z-scores are computed over available FRED history, which
+      for these ICE BofA series is about {{ '%.1f' | format(ctx.shortest_history) }} years —
+      shorter than for most series on this page.
+    </p>
+  </div>
+  <div class="block">
+    <h3 class="block__title">History</h3>
+    <div class="chart">{{ ctx.charts.history | safe }}</div>
+  </div>
+</div>

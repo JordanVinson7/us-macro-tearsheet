@@ -1,0 +1,49 @@
+{% from '_macros.html.j2' import change, stale_badge %}
+{% set ctx = result.context %}
+
+<div class="block">
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Indicator</th><th scope="col">Latest</th><th scope="col">Prior</th>
+          <th scope="col">Change</th><th scope="col">Year on year</th><th scope="col">Units</th>
+          <th scope="col">Observed</th><th scope="col">Next release</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in ctx.rows %}
+        <tr>
+          <td>
+            {{ row.name }}{{ stale_badge(row.stale) }}
+            {% if row.proxy_for %}<span class="badge badge--proxy" title="Stands in for {{ row.proxy_for }}, which FRED does not publish">proxy</span>{% endif %}
+          </td>
+          {% if row.available %}
+            <td>{{ row.latest | number }}</td>
+            <td>{{ row.prior | number }}</td>
+            <td>{{ change(row.change, 'plain', 2) }}</td>
+            <td>
+              {% if row.yoy is none %}<span class="na">—</span>
+              {% else %}{{ change(row.yoy, 'plain', 2) }} <span class="dim">{{ row.yoy_units }}</span>{% endif %}
+            </td>
+            <td class="dim">{{ row.units }}</td>
+            <td class="dim">{{ row.observation_date | day('%d %b %Y') }}</td>
+            <td class="dim">{{ row.next_release | day('%d %b') }}</td>
+          {% else %}
+            <td colspan="7" class="na">data unavailable</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="block">
+  <h3 class="block__title">{{ ctx.trend_years }}-year trends</h3>
+  <div class="chart">{{ ctx.charts.trends | safe }}</div>
+  <p class="block__note">
+    Each panel shows the transformed series. Green indicates the series is
+    higher than at the start of the window, red lower.
+  </p>
+</div>

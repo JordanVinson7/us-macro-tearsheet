@@ -1,0 +1,106 @@
+{% from '_macros.html.j2' import change %}
+{% set ctx = result.context %}
+
+<div class="grid grid--sidebar">
+  <div class="block">
+    <h3 class="block__title">{{ ctx.correlation_window }}-day cross-asset correlations</h3>
+    <div class="chart">{{ ctx.charts.correlations | safe }}</div>
+    <p class="block__note">
+      Correlations of daily changes. Credit spreads are differenced in basis
+      points rather than percentage-changed, which would be meaningless near zero.
+    </p>
+  </div>
+  <div class="block">
+    <h3 class="block__title">Volatility percentiles</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th scope="col">Asset</th><th scope="col">Vol</th><th scope="col">Percentile</th></tr></thead>
+        <tbody>
+          {% for row in ctx.volatility_rows %}
+          <tr>
+            <td>{{ row.ticker }}</td>
+            <td>{{ row.volatility | level(1) }}</td>
+            <td>{{ row.percentile | ordinal }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid--2">
+  <div class="block">
+    <h3 class="block__title">Stock-bond correlation (SPY / TLT)</h3>
+    <div class="chart">{{ ctx.charts.stock_bond | safe }}</div>
+    <p class="block__note">
+      Latest: <strong>{{ ctx.stock_bond_latest | signed(2) }}</strong> over
+      {{ ctx.correlation_window }} sessions of daily returns.
+    </p>
+  </div>
+  <div class="block">
+    <h3 class="block__title">VIX term structure</h3>
+    {% if ctx.charts.vix_term is defined %}
+      <div class="chart">{{ ctx.charts.vix_term | safe }}</div>
+      <p class="block__note">
+        VIX / VIX3M. A ratio above 1.00 is backwardation — near-term implied
+        volatility above three-month. Latest: <strong>{{ ctx.term_ratio | level(2) }}</strong>.
+      </p>
+    {% else %}
+      <div class="callout callout--warn">{{ ctx.term_note }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="block">
+  <h3 class="block__title">Risk regime composite</h3>
+  {% if ctx.regime %}
+    <div class="grid grid--sidebar">
+      <div>
+        <div class="stat-row">
+          <div>
+            <div class="stat__label">Composite</div>
+            <div class="regime__score {{ ctx.regime.score | tone }}">{{ ctx.regime.score | signed(2) }}</div>
+            <div class="regime__label {{ ctx.regime.tone }}">{{ ctx.regime.label }}</div>
+          </div>
+          <div>
+            <div class="stat__label">Components</div>
+            <div class="stat__value">{{ ctx.regime.components | length }} / {{ ctx.regime_total_components }}</div>
+            {% if ctx.regime.missing %}
+              <div class="block__note">
+                Dropped: {{ ctx.regime.missing | join(', ') }} — remaining weights re-normalised.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="chart">{{ ctx.charts.regime | safe }}</div>
+      </div>
+      <div>
+        <div class="chart">{{ ctx.charts.contributions | safe }}</div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Component</th><th scope="col">Level</th><th scope="col">z</th><th scope="col">Weight</th><th scope="col">Contribution</th></tr></thead>
+            <tbody>
+              {% for component in ctx.regime.components %}
+              <tr>
+                <td>{{ component.label }}</td>
+                <td>{{ component.raw_value | number }}</td>
+                <td>{{ change(component.zscore, 'plain', 2) }}</td>
+                <td>{{ (component.weight * 100) | level(0) }}%</td>
+                <td>{{ change(component.contribution, 'plain', 3) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:14px">
+      <strong>This is a descriptive indicator, not a trading signal.</strong>
+      It summarises how current conditions compare with their own recent history.
+      It is not a forecast and carries no view on future returns.
+    </div>
+  {% else %}
+    <div class="callout callout--warn">The risk regime composite had no usable components.</div>
+  {% endif %}
+</div>

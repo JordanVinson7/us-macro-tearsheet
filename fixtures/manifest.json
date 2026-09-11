@@ -1,0 +1,13 @@
+{
+  "counts": {
+    "fred": 36,
+    "headlines": 10,
+    "intraday": 4,
+    "prices": 40,
+    "quotes": 18
+  },
+  "recorded_at": "2026-09-11T23:10:12",
+  "run_date": "2026-09-11",
+  "session": "2026-09-10",
+  "version": 1
+}

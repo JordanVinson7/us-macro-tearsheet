@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archive — {{ meta.title }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>{{ stylesheet }}</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap masthead__row">
+    <div>
+      <h1 class="masthead__title">Archive</h1>
+      <p class="masthead__subtitle">{{ meta.title }}</p>
+    </div>
+    <div class="masthead__date"><a href="../index.html">← Latest sheet</a></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="section">
+    {% if entries %}
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Day</th><th scope="col">Size</th><th scope="col"></th></tr>
+          </thead>
+          <tbody>
+            {% for entry in entries %}
+            <tr>
+              <td><a href="{{ entry.filename }}">{{ entry.date.strftime('%d %B %Y') }}</a></td>
+              <td class="dim">{{ entry.date.strftime('%A') }}</td>
+              <td>{{ entry.size_kb }} KB</td>
+              <td><a href="{{ entry.filename }}">Open</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="block__note">
+        {{ entries | length }} sheet(s) archived.
+        {% if retain_days %}Sheets are retained for {{ retain_days }} days.{% endif %}
+      </p>
+    {% else %}
+      <p class="dim">No archived sheets yet.</p>
+    {% endif %}
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>Generated {{ generated_at.strftime('%d %b %Y, %H:%M %Z') }}.</p>
+  </div>
+</footer>
+</body>
+</html>
