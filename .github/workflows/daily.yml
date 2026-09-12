@@ -97,7 +97,10 @@ jobs:
             echo "No changes to publish — the guard stood down or nothing changed."
             exit 0
           fi
-          git commit -m "Publish tear-sheet for $(date -u +%Y-%m-%d)"
+          # The report date is the New York trading date, which is what the
+          # published filename uses. `date -u` would disagree with it for any
+          # run made during the ET evening.
+          git commit -m "Publish tear-sheet for $(TZ=America/New_York date +%Y-%m-%d)"
           # Re-check the remote in case a manual run landed in between.
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
