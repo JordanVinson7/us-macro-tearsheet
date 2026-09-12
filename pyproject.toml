@@ -51,4 +51,9 @@ convention = "google"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+# `python -m pytest` puts the working directory on sys.path; the bare `pytest`
+# console script does not. Without this, a clean checkout fails to import the
+# tearsheet package unless it has been pip-installed first — which is exactly
+# what CI does, and what anyone cloning the repo would hit.
+pythonpath = ["."]
 filterwarnings = ["ignore::DeprecationWarning"]

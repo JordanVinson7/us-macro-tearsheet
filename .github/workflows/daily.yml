@@ -56,10 +56,10 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -106,7 +106,7 @@ jobs:
       # hundreds of megabytes a year to a repository that never forgets.
       - name: Upload the PDF as a workflow artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tearsheet-pdf
           path: docs/*.pdf
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload the run log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tearsheet-logs
           path: logs/
